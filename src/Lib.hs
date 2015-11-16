@@ -21,21 +21,18 @@ addPhrase Empty (c:cs) =
   Edge (Map.singleton c
                       (addPhrase Empty cs))
 addPhrase (Edge m) (c:cs) =
-  Edge $
-  Map.insert c
-             (addPhrase (fromMaybe Empty (Map.lookup c m)) cs)
-             m
+  Edge $ Map.alter (\mk -> Just $ addPhrase (fromMaybe Empty mk) cs) c m
 
 readSubtree :: (Char,Node) -> [String]
-readSubtree (k,v) = fmap (k:) (readPhrases v [])
+readSubtree (k,v) = (k :) <$> readPhrases v []
 
 readPhrases :: Node -> String -> [String]
 readPhrases Empty _ = [""]
 readPhrases (Edge m) [] = concatMap readSubtree (Map.assocs m)
 readPhrases (Edge m) (c:cs) =
   case Map.lookup c m of
-    Just subnode -> fmap (c :) (readPhrases subnode cs)
     Nothing -> []
+    Just subnode -> (c :) <$> readPhrases subnode cs
 
 ------------------------------------------------------------
 
