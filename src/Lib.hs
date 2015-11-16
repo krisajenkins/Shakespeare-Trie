@@ -1,12 +1,18 @@
-module Lib
-    ( someFunc
-    ) where
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE ViewPatterns      #-}
+module Lib (someFunc) where
 
 import           Control.Monad
 import           Data.Char
 import           Data.Map      (Map)
 import qualified Data.Map      as Map
 import           Data.Maybe
+import           Data.Monoid
+import           Data.Text     (Text)
+import qualified Data.Text     as T
+import           Data.Text.IO
+import qualified Data.Text.IO  as TIO
+import           Prelude       hiding (getLine, putStrLn, readFile)
 
 data Node
   = Empty
@@ -15,39 +21,36 @@ data Node
 
 ------------------------------------------------------------
 
-addPhrase :: Node -> String -> Node
-addPhrase n [] = n
-addPhrase Empty (c:cs) =
-  Edge (Map.singleton c
-                      (addPhrase Empty cs))
-addPhrase (Edge m) (c:cs) =
-  Edge $ Map.alter (\mk -> Just $ addPhrase (fromMaybe Empty mk) cs) c m
+instance Monoid Node where
+  mempty = Empty
+  mappend Empty y = y
+  mappend x Empty = x
+  mappend (Edge x) (Edge y) = Edge $ Map.unionWith mappend x y
 
-readSubtree :: (Char,Node) -> [String]
-readSubtree (k,v) = (k :) <$> readPhrases v []
+addPhrase :: Node -> Text -> Node
+addPhrase n (T.uncons -> Nothing) = n
+addPhrase Empty (T.uncons -> Just (c,cs)) =
+  Edge $
+  Map.singleton c
+                (addPhrase Empty cs)
+addPhrase e@(Edge _) cs = mappend e (addPhrase Empty cs)
 
-readPhrases :: Node -> String -> [String]
+readPhrases :: Node -> Text -> [Text]
 readPhrases Empty _ = [""]
-readPhrases (Edge m) [] = concatMap readSubtree (Map.assocs m)
-readPhrases (Edge m) (c:cs) =
+readPhrases (Edge m) (T.uncons -> Just (c,cs)) =
   case Map.lookup c m of
     Nothing -> []
-    Just subnode -> (c :) <$> readPhrases subnode cs
+    Just subnode -> T.cons c <$> readPhrases subnode cs
+readPhrases (Edge m) (T.uncons -> Nothing) =
+  concatMap readSubtree (Map.assocs m)
+  where readSubtree (k,v) = T.cons k <$> readPhrases v ""
 
 ------------------------------------------------------------
 
-a :: Node
-a = foldl addPhrase Empty ["bar", "baz", "foo"]
-
-b :: [String]
-b = readPhrases a "q"
-
-------------------------------------------------------------
-
-readShakespeare :: FilePath -> IO [String]
+readShakespeare :: FilePath -> IO [Text]
 readShakespeare file =
   do corpus <- readFile file
-     return $ dropWhile isSpace <$> lines corpus
+     return $ T.stripStart <$> T.lines corpus
 
 repl :: Node -> IO ()
 repl trie =
@@ -55,7 +58,7 @@ repl trie =
      prefix <- getLine
      mapM_ putStrLn (take 20 (readPhrases trie prefix))
      putStrLn "-------"
-     unless (null prefix)
+     unless (T.null prefix)
             (repl trie)
 
 someFunc :: IO ()
