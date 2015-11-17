@@ -1,6 +1,6 @@
 module Main where
 
-import Lib
+import ShakespeareTrie
 
 main :: IO ()
 main = someFunc

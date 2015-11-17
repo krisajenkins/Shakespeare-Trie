@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ViewPatterns      #-}
-module Lib (someFunc) where
+module ShakespeareTrie (someFunc, Node, readPhrases, addPhrase) where
 
 import           Control.Monad
 import           Data.Char
