@@ -1,6 +1,12 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ViewPatterns      #-}
-module ShakespeareTrie (someFunc, Node, readPhrases, addPhrase) where
+module ShakespeareTrie (
+    someFunc,
+    Node,
+    readPhrases,
+    addPhrase,
+    keyVariants,
+) where
 
 import           Control.Monad
 import           Data.Char
@@ -44,6 +50,14 @@ readPhrases (Edge m) (T.uncons -> Just (c,cs)) =
 readPhrases (Edge m) (T.uncons -> Nothing) =
   concatMap readSubtree (Map.assocs m)
   where readSubtree (k,v) = T.cons k <$> readPhrases v ""
+
+
+keyVariants c
+ | u == l = [c]
+ | otherwise = [u, l]
+ where
+    u = Data.Char.toUpper c
+    l = Data.Char.toLower c
 
 ------------------------------------------------------------
 

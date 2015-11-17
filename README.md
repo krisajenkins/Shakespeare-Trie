@@ -14,3 +14,9 @@ stack exec shakespeare-trie
 ```
 
 You can enter queries and it will show the first 20 lines that begin with that string.
+
+## Run test
+
+``` sh
+stack tests
+```
